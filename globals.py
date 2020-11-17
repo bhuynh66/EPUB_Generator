@@ -71,7 +71,7 @@ htmlEnd = """</strong></h2>
 opfManifestStart = """<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="BookId" version="2.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
-    <dc:identifier id="BookId" opf:scheme="UUID">urn:uuid:8e5377c9-0095-4442-9a99-d6e4ade7e988</dc:identifier>
+    <dc:identifier id="BookId" opf:scheme="UUID">urn:uuid:e35708b9-d06f-4796-bf03-0690b2443825</dc:identifier>
     <dc:language>en</dc:language>
     <dc:date opf:event="modification">0000-00-00</dc:date>
     <meta content="0.7.4" name="Sigil version" />
@@ -80,14 +80,13 @@ opfManifestStart = """<?xml version="1.0" encoding="utf-8" standalone="yes"?>
     <item href="toc.ncx" id="ncx" media-type="application/x-dtbncx+xml" />\n"""
 
 
-tocStart = """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN"
- "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
-<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+tocStart = """<?xml version='1.0' encoding='utf-8'?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1" xml:lang="eng">
   <head>
-    <meta content="urn:uuid:8e5377c9-0095-4442-9a99-d6e4ade7e988" name="dtb:uid"/>
-    <meta content="3" name="dtb:depth"/>
-    <meta content="0" name="dtb:totalPageCount"/>
-    <meta content="0" name="dtb:maxPageNumber"/>
+    <meta name="dtb:uid" content="e35708b9-d06f-4796-bf03-0690b2443825"/>
+    <meta name="dtb:depth" content="2"/>
+    <meta name="dtb:generator" content="calibre (5.4.2)"/>
+    <meta name="dtb:totalPageCount" content="0"/>
+    <meta name="dtb:maxPageNumber" content="0"/>
   </head>
   <docTitle>\n"""
