@@ -266,17 +266,10 @@ def folderOrFile():
         
         if filenam:
             for root, dirs, filename in os.walk(filenam):        
-                pass
-            
-            if not filename:
-                print("No Textfile to convert!")
+                for name in filename:
                 
-                return []
-                
-            for name in filename:
-            
-                if name.endswith(".txt"):
-                    listOfFiles.append(os.path.join(root,name))
+                    if name.endswith(".txt"):
+                        listOfFiles.append(os.path.join(root,name))
         else:
             print("No Folder Selected")
           
@@ -310,7 +303,16 @@ def main():
             return 
     
     init12(directory)
-    path1 = os.path.join(path, directory+"\OEBPS\Text")  #this could cause issue on linux
+    
+    """
+    The next 3 line is here is to prevent hardcoding the path with forward slashes or backwarded
+    slashes ie \OEBPS\Text and /OEBPS/Text which could cause problem on unix 
+    """
+    
+    path1 = os.path.join(path, directory)  
+    path1 = os.path.join(path1, "OEBPS")
+    path1 = os.path.join(path1, "Text")
+    
     os.chdir(path1)
     
 
