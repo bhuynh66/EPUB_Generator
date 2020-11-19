@@ -4,78 +4,84 @@ from tkinter.filedialog import askopenfilename, askdirectory
 import os
 import shutil
 
+class Book:
 
-def init12(directory): 
+    def __init__(self,directory): 
 
-    """
-    Here we are making the current working directory
-    here we assume that this is an entirely new project
-    thus we will create all the require files.   
+        """
+        Here we are making the current working directory
+        here we assume that this is an entirely new project
+        thus we will create all the require files.   
 
-    """
+        """
 
-    parent_dir = os.getcwd()
-    path = os.path.join(parent_dir, directory)
-    os.mkdir(path)
-    os.chdir(path)
-    mimetype()
-     
-    directory = "META-INF"
-    path1 = os.path.join(path, directory)
-    os.mkdir(path1)
-    os.chdir(path1) #Traverse into META-INF folder
-    container1()
-    
-    os.chdir(path) #Return back into the Home directory
-    
-    directory = "OEBPS"
-    path1 = os.path.join(path,directory)
-    os.mkdir(path1)
-    oebps(path1) #initialize the subfolders
-    
-    return
- 
- 
-def container1():
-
-    container2 = open("container.xml", "w+")
-    container2.write(globals.container)
-    container2.close()
-    
-    return 
-
-
-def mimetype():
-
-    mime = open("mimetype", "w+")
-    mime.write("application/epub+zip")
-    mime.close()
-    
-    return
-
-    
-def sgctoc():
-
-    sgc = open("sgc-toc.css", "w+")
-    sgc.write(globals.sgcToc)
-    sgc.close()
-    
-    return
-
-
-def oebps(path):
-
-    directory = ["Images", "Styles" , "Text"]
-    
-    for name in directory:
-        path1 = os.path.join(path, name)
+        parent_dir = os.getcwd()
+        path = os.path.join(parent_dir, directory)
+        os.mkdir(path)
+        os.chdir(path)
+        self.mimetype()
+         
+         
+        #Traverse into META-INF folder 
+        directory = "META-INF"
+        path1 = os.path.join(path, directory)
         os.mkdir(path1)
-    
-        if name == "Styles":
-            os.chdir(path1)
-            sgctoc()
-            
-    return 
+        os.chdir(path1) 
+        self.container()
+        
+        #Return back into the Home directory
+        os.chdir(path) 
+        
+        directory = "OEBPS"
+        path1 = os.path.join(path,directory)
+        os.mkdir(path1)
+        
+        #initialize the subfolders
+        self.oebps(path1) 
+        
+        return
+ 
+ 
+    def container(self):
+
+        container2 = open("container.xml", "w+")
+        container2.write(globals.container)
+        container2.close()
+        
+        return 
+
+
+    def mimetype(self):
+
+        mime = open("mimetype", "w+")
+        mime.write("application/epub+zip")
+        mime.close()
+        
+        return
+
+        
+    def sgctoc(self):
+
+        sgc = open("sgc-toc.css", "w+")
+        sgc.write(globals.sgcToc)
+        sgc.close()
+        
+        return
+
+
+    def oebps(self, path):
+
+        directory = ["Images", "Styles" , "Text"]
+        
+        for name in directory:
+            path1 = os.path.join(path, name)
+            os.mkdir(path1)
+        
+            if name == "Styles":
+                os.chdir(path1)
+                self.sgctoc()
+                
+        return 
    
 
 def writer(fileLocation , path, chapterNum):
@@ -85,9 +91,11 @@ def writer(fileLocation , path, chapterNum):
         this function specifically take a filelocation, the homedirectory and chapternumber
     
     """
+    #given a file path we get the file name 
+    baseFileName = os.path.basename(fileLocation) 
     
-    baseFileName = os.path.basename(fileLocation) #given a file path we get the file name 
-    fileLocationName = os.path.splitext(baseFileName)[0] # get name of file
+    # get name of file
+    fileLocationName = os.path.splitext(baseFileName)[0] 
     
     
     os.chdir(path)
@@ -103,7 +111,8 @@ def writer(fileLocation , path, chapterNum):
     chapter.write(globals.htmlHeader)
     chapter.write(startOfHtml)
     
-    for i in fileToConvert.readlines(): #parse the files for multi newlines
+    #parse the files for multi newlines
+    for i in fileToConvert.readlines(): 
     
         with open("out.txt", "a+", encoding="utf-8") as output:
             
@@ -112,14 +121,17 @@ def writer(fileLocation , path, chapterNum):
     
     output.close()
     
-    with open("out.txt", encoding="utf-8") as file: #begin writing the html file
+    #begin writing the html file
+    with open("out.txt", encoding="utf-8") as file: 
     
         file = file.read()
         file = file.replace("\n", """</p> \n\n <p>""")
         chapter.write(file)
     
     output.close()
-    parent_dir = os.getcwd()  # we delete the dummy file 
+    
+    # we delete the dummy file 
+    parent_dir = os.getcwd()  
     path  = os.path.join(parent_dir, "out.txt")
     os.remove(path)
     
@@ -142,9 +154,7 @@ def opfManifest(path,title):
         
         we will use os.walk() to traverse through the subdirectories.
         
-        Furthermore this function will also create the table of content
-    
-    
+        Furthermore this function will also create the table of content 
     """
     
     id_entry = []
@@ -167,8 +177,7 @@ def opfManifest(path,title):
                 href.append("Styles/"+filename)
                 
     
-    #we begin writing the manifest here
-    
+    #we begin writing the manifest here   
     content = open("content.opf" , "w+")
     content.write(globals.opfManifestStart)
     
@@ -179,13 +188,13 @@ def opfManifest(path,title):
         
     content.write("  </manifest>\n")
      
-    #here we will write the spine
-    
+    #here we will write the spine  
     content.write("""  <spine toc="ncx">\n""")
     
     for i in id_entry:
     
-        if i.endswith(".css"): #we do not want to write the .css file into the spine 
+        #we do not want to write the .css file into the spine
+        if i.endswith(".css"):  
             pass
             
         else:
@@ -195,7 +204,6 @@ def opfManifest(path,title):
     content.write("""  </spine> \n </package>""")
     
     #we write the table of content here 
-    
     tableOfContent = open("toc.ncx", "w+", encoding="utf-8")
     
     tableOfContent.write(globals.tocStart)
@@ -250,8 +258,12 @@ def folderOrFile():
         
         for i in range(int(numOfChapter)):
     
-            tk.Tk().withdraw() #suppress the tk gui from appearing
-            filename = askopenfilename() #opens the box for us to find the files 
+    
+            #suppress the tk gui from appearing
+            tk.Tk().withdraw()
+            
+            #opens the box for us to find the files
+            filename = askopenfilename()  
             
             if not filename:
                 pass 
@@ -274,6 +286,7 @@ def folderOrFile():
             print("No Folder Selected")
           
     return listOfFiles
+
 
 
 def main():
@@ -302,7 +315,7 @@ def main():
             
             return 
     
-    init12(directory)
+    Book(directory)
     
     """
     The next 3 line is here is to prevent hardcoding the path with forward slashes or backwarded
@@ -319,15 +332,16 @@ def main():
     chaptNum = 1               
     
     #we proceed to convert the text files into html files 
-    
     for i in listOfText:
         writer(i,path1, chaptNum)
         chaptNum+=1
 
     opfManifest(os.path.join(path,directory), directory)
-
-    os.chdir(path) #return back to home directory
-
+    
+    
+    #return back to home directory
+    os.chdir(path) 
+    
     """
         Here we will zip the file and change the .zip extension to a .epub 
         and thus the epub has been created
