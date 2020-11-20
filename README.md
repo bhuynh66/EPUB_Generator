@@ -15,7 +15,7 @@ then follow the on screen instructions.
 
 ## Notes
 
-1. Requires python 3.x
+1. Requires python 3.x and tkinter
 
 2. Directories are case insensitive. For example, suppose you have 2 folders say, Pop and PoP. Then both of them  would be consider the same folder.
 
