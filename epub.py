@@ -1,8 +1,11 @@
-import globals
+import globalVar
 import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory
 import os
 import shutil
+from bs4 import BeautifulSoup
+import requests
+import urllib.request
 
 class Book:
 
@@ -45,7 +48,7 @@ class Book:
     def container(self):
 
         container2 = open("container.xml", "w+")
-        container2.write(globals.container)
+        container2.write(globalVar.container)
         container2.close()
         
         return 
@@ -63,7 +66,7 @@ class Book:
     def sgctoc(self):
 
         sgc = open("sgc-toc.css", "w+")
-        sgc.write(globals.sgcToc)
+        sgc.write(globalVar.sgcToc)
         sgc.close()
         
         return
@@ -97,53 +100,32 @@ def writer(fileLocation , path, chapterNum):
     # get name of file
     fileLocationName = os.path.splitext(baseFileName)[0] 
     
-    
     os.chdir(path)
     
     newFileName  = str(chapterNum)+"."+fileLocationName +".html" 
     chapter = open(newFileName, "w+", encoding="utf-8")
     title = "Chapter" + " " + str(chapterNum)+": "+fileLocationName 
     
-    startOfHtml = globals.htmlStart + title + globals.htmlEnd
-    
-    fileToConvert = open(fileLocation, "r", encoding="utf-8")
+    startOfHtml = globalVar.htmlStart + title + globalVar.htmlEnd
         
-    chapter.write(globals.htmlHeader)
+    chapter.write(globalVar.htmlHeader)
     chapter.write(startOfHtml)
     
-    #parse the files for multi newlines
-    for i in fileToConvert.readlines(): 
-    
-        with open("out.txt", "a+", encoding="utf-8") as output:
-            
-            if i != "\n":
-                output.write(i)
-    
-    output.close()
-    
     #begin writing the html file
-    with open("out.txt", encoding="utf-8") as file: 
+    with open(fileLocation, "r", encoding="utf-8") as file: 
     
         file = file.read()
         file = file.replace("\n", """</p> \n\n <p>""")
         chapter.write(file)
-    
-    output.close()
-    
-    # we delete the dummy file 
-    parent_dir = os.getcwd()  
-    path  = os.path.join(parent_dir, "out.txt")
-    os.remove(path)
-    
+   
     chapter.write("""</p>""")
-    chapter.write(globals.htmlEndHeader)
+    chapter.write(globalVar.htmlEndHeader)
     chapter.close()
-    fileToConvert.close()
-    
+   
     return 
 
 
-def opfManifest(path,title):
+def opfManifest(path,title, listOfRef = []):
 
     """
         for this function we will iterate through the  exising folder, Text and Images.
@@ -175,15 +157,19 @@ def opfManifest(path,title):
             if filepath.endswith(".css"):
                 id_entry.append(filename)
                 href.append("Styles/"+filename)
+            
+            if filepath.endswith(".jpg"):
+                id_entry.append(filename)
+                href.append("Images/"+filename)
                 
     
     #we begin writing the manifest here   
     content = open("content.opf" , "w+")
-    content.write(globals.opfManifestStart)
+    content.write(globalVar.opfManifestStart)
     
     for hreff,idx in zip(href , id_entry):
     
-        manifestEntry = "    <item href="+"\""+hreff+"\""+" "+"id="+"\""+idx+"\""+" "+"""media-type="application/xhtml+xml" />\n"""
+        manifestEntry = "\t<item href="+"\""+hreff+"\""+" "+"id="+"\""+idx+"\""+" "+"""media-type="application/xhtml+xml" />\n"""
         content.write(manifestEntry)
         
     content.write("  </manifest>\n")
@@ -194,11 +180,11 @@ def opfManifest(path,title):
     for i in id_entry:
     
         #we do not want to write the .css file into the spine
-        if i.endswith(".css"):  
+        if i.endswith(".css") or i.endswith(".jpg"):  
             pass
             
         else:
-            idref = "    <itemref idref="+"\""+i+"\""+" />\n"
+            idref = "\t<itemref idref="+"\""+i+"\""+" />\n"
             content.write(idref)
     
     content.write("""  </spine> \n </package>""")
@@ -206,34 +192,54 @@ def opfManifest(path,title):
     #we write the table of content here 
     tableOfContent = open("toc.ncx", "w+", encoding="utf-8")
     
-    tableOfContent.write(globals.tocStart)
-    tableOfContent.write("    <text>"+ title + "</text>\n  </docTitle> \n  <navMap>\n")
+    tableOfContent.write(globalVar.tocStart)
+    tableOfContent.write("\t<text>"+ title + "</text>\n  </docTitle> \n  <navMap>\n")
     
     orderNum = 1
     
-    for hreff,idx in zip(href, id_entry):
+    if not listOfRef:
+        for hreff,idx in zip(href, id_entry):
+            
+            if idx.endswith(".css") or idx.endswith(".jpg"):
+                pass
+                
+            else:
+                
+                filenameSplit = idx.split(".")
+                
+                tableOfContent.write("""\t<navPoint id="navPoint-"""+str(orderNum)+"\""+ """ playOrder=\""""+str(orderNum)+"\""
+                +""">\n  \t<navLabel>\n""")
+              
+                tableOfContent.write("\t\t<text>"+ "Chapter " + filenameSplit[0]+ ": " + filenameSplit[1] + "</text>\n")
+                
+                tableOfContent.write("\t  </navLabel>\n")
+                
+                tableOfContent.write("""  \t<content src=\""""+hreff +"\""+ """ />\n\t</navPoint>\n""")
+                    
+               
+                orderNum +=1
+    else:
         
-        if idx.endswith(".css"):
-            pass
+        hreff = [html for html in href if html.endswith(".html")][0]
+        
+        for entry in listOfRef:
+        
+            tableOfContent.write("""\t<navPoint href="navPoint-"""+str(orderNum)+"\""+ """ playOrder=\""""+str(orderNum)+"\""
+                +""">\n  \t<navLabel>\n""")
+              
+            tableOfContent.write("\t\t<text>"+ entry + "</text>\n")
             
-        else:
-            filenameSplit = idx.split(".")
+            tableOfContent.write("\t  </navLabel>\n")
             
-            tableOfContent.write("""    <navPoint id="navPoint-"""+str(orderNum)+"\""+ """ playOrder=\""""+str(orderNum)+"\""
-            +""">\n      <navLabel>\n""")
-          
-            tableOfContent.write("        <text>"+ "Chapter " + filenameSplit[0]+ ": " + filenameSplit[1] + "</text>\n")
+            tableOfContent.write("""  \t<content src=\""""+hreff+"#"+entry.replace(" ","_") +"\""+ """ />\n\t</navPoint>\n""")
             
-            tableOfContent.write("      </navLabel>\n")
-            
-            tableOfContent.write("""      <content src=\""""+hreff +"\""+ """ />\n    </navPoint>\n""")
-    
             orderNum +=1
             
     tableOfContent.write("""  </navMap>\n</ncx>""")
     tableOfContent.close()
     
     return 
+
 
 
 def folderOrFile():
@@ -289,11 +295,88 @@ def folderOrFile():
 
 
 
+def webScraper(path):
+
+
+    os.chdir(path)
+    #So far works with wikipedia
+    url = input("Enter a webpage: " )
+    page = requests.get(url)
+
+    if page.status_code == 200:
+        soup = BeautifulSoup(page.content , "html.parser")
+    else:
+        raise ValueError("Page not available")
+   
+    
+    soup = BeautifulSoup(open(filename,"r+",encoding="utf-8"), "html.parser")
+    """
+    So the next bit will parse the headers the text and the images
+    """
+
+    links = soup.find_all(lambda tag: tag.get('class')==["mw-headline"] or tag.name in ["p", "img"])
+
+
+    """
+    for image support we would need to download the images and set the pathway in the file
+    so this would mean that we need to manually write in the image location in the epub into the output file
+
+    """
+    imgNum = 1
+    chapNum = 1
+    chaptArr = [] # this will contain the name of our chapters
+
+    """
+    The directory name will be the title of the article
+    """
+    title = (soup.find_all("title")[0].get_text().split(" - "))[0] 
+    
+    chapter = open("1.html", "w+", encoding="utf-8")
+    chapter.write(globalVar.htmlHeader)
+    
+    for link in links:
+        
+        if link.get('class') == ["mw-headline"]:
+            headline = link.get_text()
+            chaptArr.append(headline)
+            header = """<h2><strong>""" + "<span id="+str(headline).replace(" ","_")+">" + str(headline)+ """</span></strong></h2> \n\n"""
+            chapter.write(header)
+
+        elif link.name == "img":
+            img_link = link["src"].split("src=")[-1]
+            print(img_link)
+            if img_link.endswith("svg.png") or "static/images/footer" in img_link or "CentralAutoLogin" in img_link or "Wooden_hourglass_3" in img_link or "mediawiki" in img_link or not img_link:
+                pass
+            
+            else:
+                #image downloading not working atm
+                #imgToJpeg = open(str(imgNum)+".jpg", "wb")
+
+                #download_img= urllib.request.urlopen(img_link)
+                #imgToJpeg.write(download_img.read())
+                #imgToJpeg.close()
+                imgNum+=1
+                fileLoc = """<p style="text-align: center;">""" +"<img alt="+ "\""+str(imgNum)+"\""+" " +"src=\"../Images/"+str(imgNum)+""".jpg\" /><br /></p>\n\n<p style="text-align: left;"><!--StartFragment--></p>\n"""
+                chapter.write(fileLoc)
+        else:
+            
+            chapter.write("<p>"+str(link)+"</p>\n\n")
+            
+    chapter.write(globalVar.htmlEndHeader)
+    chapter.close()
+    
+    #Now we need to write the manifest and the toc
+    # We still neeed to move the images into the image folder
+    return chaptArr
+
+
+
 def main():
 
     
     directory = input("Project Name: " )
     path = os.getcwd()
+    
     
     while True:
         if os.path.isdir(directory):
@@ -301,20 +384,24 @@ def main():
             directory = input("Project Name: ")
         else:
             break
-            
-    listOfText = folderOrFile()
-    
-    while not listOfText:
-    
-        answer = input("No files selected. Try Again? Respond with Y or N: " )
+    #Webscraping still experimental
+    onlineOrOffline = 2 
+    #input("1.Online or 2.Offline? (Reply with 1 or 2) : ")
+    if int(onlineOrOffline) == 2:
         
-        if answer == "Y" or answer == "y":
-            listOfText = folderOrFile()
-        else:
-            print("GoodBye!")
+        listOfText = folderOrFile()
+        
+        while not listOfText:
+        
+            answer = input("No files selected. Try Again? Respond with Y or N: " )
             
-            return 
-    
+            if answer == "Y" or answer == "y":
+                listOfText = folderOrFile()
+            else:
+                print("GoodBye!")
+                
+                return 
+        
     Book(directory)
     
     """
@@ -322,23 +409,27 @@ def main():
     slashes ie \OEBPS\Text and /OEBPS/Text which could cause problem on unix 
     """
     
-    path1 = os.path.join(path, directory)  
+    path1 = os.path.join(path, directory)
+    path1Copy = path1
     path1 = os.path.join(path1, "OEBPS")
     path1 = os.path.join(path1, "Text")
     
     os.chdir(path1)
+    chaptArr = [] 
     
-
-    chaptNum = 1               
+    if int(onlineOrOffline) ==2:
+        chaptNum = 1               
     
-    #we proceed to convert the text files into html files 
-    for i in listOfText:
-        writer(i,path1, chaptNum)
-        chaptNum+=1
-
-    opfManifest(os.path.join(path,directory), directory)
+        #we proceed to convert the text files into html files 
+        for i in listOfText:
+            writer(i,path1, chaptNum)
+            chaptNum+=1
+    else:
+        chaptArr = webScraper(path1)
     
-    
+    #Write the opfManifest
+    opfManifest(os.path.join(path,directory), directory, chaptArr)
+      
     #return back to home directory
     os.chdir(path) 
     
@@ -352,7 +443,8 @@ def main():
     book = directory + ".zip"
     base = os.path.splitext(book)[0]
     os.rename(book, base + ".epub")
-    
+    #remove our folder
+    shutil.rmtree(path1Copy)
     print("Success!")
     
     return 
